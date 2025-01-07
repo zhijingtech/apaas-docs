@@ -11,10 +11,10 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - type: bind
-        source: ./opt/postgresql/data
+        source: ./postgresql/data
         target: /var/lib/postgresql/data
       - type: bind
-        source: ./opt/postgresql/docker-entrypoint-initdb.d
+        source: ./postgresql/docker-entrypoint-initdb.d
         target: /docker-entrypoint-initdb.d
     networks:
       - intranet
@@ -48,7 +48,7 @@ services:
     command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
     volumes:
       - type: bind
-        source: ./opt/kratos/config
+        source: ./kratos/config
         target: /etc/config/kratos
     networks:
       - intranet
@@ -58,7 +58,7 @@ services:
       - DSN=postgres://root:secret@postgresd:5432/postgres?sslmode=disable&max_conns=20&max_idle_conns=4
     volumes:
       - type: bind
-        source: ./opt/kratos/config
+        source: ./kratos/config
         target: /etc/config/kratos
     command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
     restart: on-failure
@@ -81,7 +81,7 @@ services:
     command: serve -c /etc/config/hydra/hydra.yml all --dev
     volumes:
       - type: bind
-        source: ./opt/hydra/config
+        source: ./hydra/config
         target: /etc/config/hydra
     environment:
       - DSN=postgres://root:secret@postgresd:5432/postgres?sslmode=disable&max_conns=20&max_idle_conns=4
@@ -97,7 +97,7 @@ services:
     command: migrate -c /etc/config/hydra/hydra.yml sql -e --yes
     volumes:
       - type: bind
-        source: ./opt/hydra/config
+        source: ./hydra/config
         target: /etc/config/hydra
     restart: on-failure
     networks:
@@ -118,7 +118,7 @@ services:
       - postgresd:postgresd
     volumes:
       - type: bind
-        source: ./opt/keto/config
+        source: ./keto/config
         target: /home/ory
     environment:
       - LOG_LEVEL=debug
@@ -131,7 +131,7 @@ services:
     image: oryd/keto:v0.12.0-alpha.0
     volumes:
       - type: bind
-        source: ./opt/keto/config
+        source: ./keto/config
         target: /home/ory
     ports:
       - "4466:4466"
@@ -158,7 +158,7 @@ services:
     #   - TRACING_PROVIDER_JAEGER_SAMPLING_VALUE=1
     volumes:
       - type: bind
-        source: ./opt/oathkeeper/config
+        source: ./oathkeeper/config
         target: /etc/config/oathkeeper
     restart: on-failure
     networks:
