@@ -24,6 +24,30 @@
     ]
   },
   {
+    "id": "kratos-registration-anonymous",
+    "version": "v0.40.7",
+    "upstream": {
+      "url": "http://kratos:4433"
+    },
+    "match": {
+      "url": "http://<127.0.0.1|localhost>:4555/self-service/registration",
+      "methods": ["POST"]
+    },
+    "authenticators": [
+      {
+        "handler": "anonymous"
+      }
+    ],
+    "authorizer": {
+      "handler": "allow"
+    },
+    "mutators": [
+      {
+        "handler": "noop"
+      }
+    ]
+  },
+  {
     "id": "allow-anonymous-with-header-mutator",
     "version": "v0.40.7",
     "upstream": {
