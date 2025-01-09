@@ -11,7 +11,9 @@ ORY 全家桶是一个开源的身份管理解决方案集合，旨在为开发�
 3. ORY Keto：一个访问控制引擎，基于开源的 Google Zanzibar 模型，提供灵活的权限管理。
 4. ORY Oathkeeper：一个身份和访问代理，用于保护 API 和应用的入口。
 
-![ORY全家桶](https://www.ory.sh/docs/assets/images/1-42e65393379b7f7ddc3f9a05474f27ac.png)
+<p align="center">
+  <img src="https://www.ory.sh/docs/assets/images/1-42e65393379b7f7ddc3f9a05474f27ac.png" alt="ORY" width="600"/>
+</p>
 
 ### ORY Kratos
 
@@ -118,7 +120,7 @@ docker-compose up
 
 记得插入一条 schema_migration 记录，vesion 的值取值日志：
 
-```shell
+```sql
 -- hydra-migrate 报错
 INSERT INTO schema_migration ("version", version_self) VALUES('20150101000001000000', 0);
 -- Keto-migrate 报错
@@ -135,160 +137,81 @@ Kratos 允许用户自己配置注册、登录、用户设置、账号恢复等�
 
 #### 用户注册
 
-1. 注册用户
+这里为了测试方便，我们直接打开 ORY 官方提供的 kratos-selfservice-ui-node 来测试。首选打开 http://127.0.0.1:4455/welcome，并点击左侧的 Sign Up，打开用户注册的页面，输入邮箱密码并提交，然后验证邮箱。由于我们用的是本地测试，没有真的发邮件，可以打开 http://127.0.0.1:4436/ 查看消息发送记录，找到用于邮箱验证的 code。验证通过后，用户注册流程完成。
 
-这里为了测试方便使用 api 类型的注册流程。
+此时后台的数据库发生了如下变更：
 
-```shell
-flowId=$(curl -s -X GET \
-    -H "Accept: application/json" \
-    http://127.0.0.1:4555/self-service/registration/api | jq -r '.id')
-curl -s -X GET \
-    -H "Accept: application/json" \
-    "http://127.0.0.1:4555/self-service/registration/flows?id=$flowId" | jq
-```
-
-返回了用户注册的流程和表单定义，可以看到注册需要提供邮箱、姓名、密码等信息。此时 selfservice_registration_flows 表中会生成一条注册流程，有效期是 10 分钟，过期后需要重新获取流程。因为还没有提交表单，所以没有生成用户。
-
-接下来我们提交用户注册的表单：
-
-```shell
-   flowId=$(curl -s -X GET \
-    -H "Accept: application/json" \
-    http://127.0.0.1:4555/self-service/registration/api | jq -r '.id')
-curl "http://127.0.0.1:4555/self-service/registration?flow=$flowId" \
-    -H 'Accept: application/json' \
-    -H 'Content-Type: application/x-www-form-urlencoded' \
-    --data-raw 'traits.email=test%40ory.com&traits.name.first=f&traits.name.last=l&password=fVta1Lax&method=password'
-```
-
-此时如下表发生了变更：
-
-- identities 生成一条用户记录。
-- identity_credentials 生成一条账号记录。
-- identity_verifiable_addresses 生成一条邮箱验证记录，处于 pending 状态，发送验证码后切换到 sent 状态。
-- identity_recovery_addresses 生成一条邮箱恢复记录。
-- identity_credential_identifiers 生成一条账号标识记录。
-- selfservice_verification_flows 生成一条邮箱验证流程，有效期是 1 个小时，处于 sent_email 状态。
+- identities 生成一条用户 ID 记录。
+- identity_credentials 生成一条用户登录的凭证记录，比如密码登录，密码加密存储。
+- identity_credential_identifiers 生成一条用户凭证标识记录，比如登录的邮箱、手机号等，绑定上面的登录凭证，可以组合出多种登录方式。
+- identity_recovery_addresses 生成一条邮箱恢复链接记录。
+- identity_verifiable_addresses 生成一条邮箱验证链接记录，处于 pending 状态，发送验证码后变为 sent 状态，验证完成后变为 completed 状态。
 - identity_verification_codes 生成一条邮箱验证码记录，code 加密存储。
+- sessions 生产另一条会话记录，用于登录状态的保持，处于 active 状态。
+- session_devices 生成一条登录设备记录，关联上面的会话。
+- selfservice_verification_flows 生成一条邮箱验证流程，有效期是 1 个小时，处于 sent_email 状态。
 - courier_messages、courier_message_dispatches 生成几条邮箱验证链接发送记录，本测试会发送失败并重试。
 
-接下来我们可以打开 http://127.0.0.1:4436/ 查看邮箱验证的 code，再打开 http://127.0.0.1:4455/welcome 点击 Account Verification 去完成邮箱验证。
+<p align="center">
+  <img src="./docs/identity_sessions.png" alt="Identity ERD" width="600"/>
+</p>
 
-此时 identity_verifiable_addresses 表中的记录变成了 completed 状态，表示完成了邮箱验证，用户注册完成。当然没有通过邮箱验证也是可以先登录的，可以在 http://127.0.0.1:4455/welcome 上测试登录。
+上图就是 Identity 和 Session 之间的关系图，展示了用户 ID、用户凭证、用户标识、登录会话、登录设备之间的关系。
+
+#### 用户登录
+
+再次打开 http://127.0.0.1:4455/welcome，并点击左侧的 Sign In，打开用户登录页面，输入邮箱密码并提交，登录成功后返回 welcome，点击左侧的 Session Information 就可以看到登录信息了。
+
+```
+id
+9c2304d6-198f-4561-afe0-003d42adab84
+
+email
+local@test.com
+
+signup date
+2025-01-09T04:59:01.210934Z
+
+authentication level
+single-factor used (aal1)
+
+session expires at
+Fri, 10 Jan 2025 06:59:46 GMT
+
+session authenticated at
+Thu, 09 Jan 2025 06:59:46 GMT
+
+authentication method used
+password (Thu, 09 Jan 2025 06:59:46 GMT)
+```
+
+此时后台的数据库发生了如下变更：
+
+- selfservice_login_flows 生成一条登录流程，有效期是 1 个小时。
+- sessions 生产另一条会话记录，用于登录状态的保持，处于激活状态。
+- session_devices 生成一条登录设备记录，关联上面的会话。
+
+#### 用户登出
+
+在 http://127.0.0.1:4455/welcome 页面上点击左侧的 Log Out，可以看到用户登出成功。
+
+此时后台的数据库发生了如下变更：
+
+- sessions 登录时的会话变成非激活状态。
+- selfservice_login_flows 生成了一条新的登录流程，有效期是 1 个小时。这是因为用户登出后回到了登录页面，有初始化了一条登录流程。
+
+#### 用户设置
+
+在 http://127.0.0.1:4455/welcome 页面上点击左侧的 Account Settings，打开用户设置页面，可以看到邮箱、密码等可以修改。
+
+#### 账号恢复
+
+#### 邮箱验证
+
+#### 2FA/MFA
 
 ---
 
-2. 获取登录流程
-   flowId=$(curl -s -X GET \
-    -H "Accept: application/json" \
-    http://127.0.0.1:4555/self-service/login/api | jq -r '.id')
-curl -s -X GET \
-    -H "Accept: application/json" \
-    "http://127.0.0.1:4555/self-service/login/flows?id=$flowId" | jq
-   {
-   "id": "c8160207-e500-4b71-9219-34d04eb72c14",
-   "organization_id": null,
-   "type": "api",
-   "expires_at": "2024-11-28T06:32:07.630187Z",
-   "issued_at": "2024-11-28T06:22:07.630187Z",
-   "request_url": "http://kratos:4433/self-service/login/api",
-   "ui": {
-   "action": "http://127.0.0.1:4433/self-service/login?flow=c8160207-e500-4b71-9219-34d04eb72c14",
-   "method": "POST",
-   "nodes": [
-   {
-   "type": "input",
-   "group": "default",
-   "attributes": {
-   "name": "csrf_token",
-   "type": "hidden",
-   "value": "",
-   "required": true,
-   "disabled": false,
-   "node_type": "input"
-   },
-   "messages": [],
-   "meta": {}
-   },
-   {
-   "type": "input",
-   "group": "default",
-   "attributes": {
-   "name": "identifier",
-   "type": "text",
-   "value": "",
-   "required": true,
-   "disabled": false,
-   "node_type": "input"
-   },
-   "messages": [],
-   "meta": {
-   "label": {
-   "id": 1070002,
-   "text": "E-Mail",
-   "type": "info",
-   "context": {
-   "title": "E-Mail"
-   }
-   }
-   }
-   },
-   {
-   "type": "input",
-   "group": "password",
-   "attributes": {
-   "name": "password",
-   "type": "password",
-   "required": true,
-   "autocomplete": "current-password",
-   "disabled": false,
-   "node_type": "input"
-   },
-   "messages": [],
-   "meta": {
-   "label": {
-   "id": 1070001,
-   "text": "Password",
-   "type": "info"
-   }
-   }
-   },
-   {
-   "type": "input",
-   "group": "password",
-   "attributes": {
-   "name": "method",
-   "type": "submit",
-   "value": "password",
-   "disabled": false,
-   "node_type": "input"
-   },
-   "messages": [],
-   "meta": {
-   "label": {
-   "id": 1010022,
-   "text": "Sign in with password",
-   "type": "info"
-   }
-   }
-   }
-   ]
-   },
-   "created_at": "2024-11-28T06:22:07.63375Z",
-   "updated_at": "2024-11-28T06:22:07.63375Z",
-   "refresh": false,
-   "requested_aal": "aal1",
-   "state": "choose_method"
-   }
-3. 用户登录：模拟用户登录，验证登录认证的正确性。
-4. 用户登录
-   用户登出
-   用户设置
-   账号恢复
-   邮箱验证
-   2FA / MFA
-   权限管理
 5. 定义角色和权限：在 Keto 中创建角色和权限，测试不同角色对资源的访问控制。
 6. 验证权限：尝试访问被保护的资源，验证权限控制的有效性。
    API 保护

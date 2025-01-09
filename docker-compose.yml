@@ -22,15 +22,17 @@ services:
   kratos-selfservice-ui-node:
     image: oryd/kratos-selfservice-ui-node:v1.3.1
     ports:
-      - "4455:4455"
+      - "4435:4435"
     environment:
+      - PORT=4435
       - KRATOS_PUBLIC_URL=http://kratos:4433/
-      - KRATOS_BROWSER_URL=http://127.0.0.1:4433/
-      - COOKIE_SECRET=changeme
+      - KRATOS_BROWSER_URL=http://127.0.0.1:4455/
+      - JWKS_URL=http://oathkeeper:4456/.well-known/jwks.json
+      - SECURITY_MODE=jwks
+      - COOKIE_SECRET=qpSdGjve
       - CSRF_COOKIE_NAME=ory_csrf_ui
-      - CSRF_COOKIE_SECRET=changeme
-      - PORT=4455
-      - SECURITY_MODE=
+      - CSRF_COOKIE_SECRET=JN%pyMv#
+      - LOG_LEVEL=debug
     networks:
       - intranet
     restart: on-failure
@@ -147,9 +149,11 @@ services:
   oathkeeper:
     image: oryd/oathkeeper:v0.40.7
     ports:
-      - "4555:4555"
-      - "4556:4556"
+      - "4455:4455"
+      - "4456:4456"
     command: serve --config=/etc/config/oathkeeper/config.yaml
+    environment:
+      - LOG_LEVEL=debug
     # environment:
     #   - TRACING_PROVIDER=jaeger
     #   - TRACING_PROVIDER_JAEGER_SAMPLING_SERVER_URL=http://jaeger:5778/sampling

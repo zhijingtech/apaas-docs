@@ -4,19 +4,16 @@ dsn: postgres://kratos:kratos@192.168.21.7:5432/kratos?sslmode=disable&max_conns
 
 serve:
   public:
-    base_url: http://127.0.0.1:4433/
+    base_url: http://127.0.0.1:4455/
     cors:
       enabled: true
   admin:
     base_url: http://kratos:4434/
 
 selfservice:
-  default_browser_return_url: http://127.0.0.1:4455/welcome
+  default_browser_return_url: http://127.0.0.1:4455/
   allowed_return_urls:
     - http://127.0.0.1:4455
-    - http://localhost:19006/Callback
-    - exp://localhost:8081/--/Callback
-
   methods:
     password:
       enabled: true
@@ -30,36 +27,29 @@ selfservice:
       enabled: true
     code:
       enabled: true
-
   flows:
     error:
       ui_url: http://127.0.0.1:4455/error
-
     settings:
       ui_url: http://127.0.0.1:4455/settings
       privileged_session_max_age: 15m
       required_aal: highest_available
-
     recovery:
       enabled: true
       ui_url: http://127.0.0.1:4455/recovery
       use: code
-
     verification:
       enabled: true
       ui_url: http://127.0.0.1:4455/verification
       use: code
       after:
-        default_browser_return_url: http://127.0.0.1:4455/welcome
-
+        default_browser_return_url: http://127.0.0.1:4455/
     logout:
       after:
         default_browser_return_url: http://127.0.0.1:4455/login
-
     login:
       ui_url: http://127.0.0.1:4455/login
       lifespan: 10m
-
     registration:
       lifespan: 10m
       ui_url: http://127.0.0.1:4455/registration
@@ -71,7 +61,7 @@ selfservice:
 
 log:
   level: debug
-  format: text
+  format: json
   leak_sensitive_values: true
 
 secrets:
