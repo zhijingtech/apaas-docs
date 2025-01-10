@@ -153,7 +153,7 @@ Kratos 允许用户自己配置注册、登录、用户设置、账号恢复等�
 - courier_messages、courier_message_dispatches 生成几条邮箱验证链接发送记录，本测试会发送失败并重试。
 
 <p align="center">
-  <img src="./docs/identity_sessions.png" alt="Identity ERD" width="600"/>
+  <img src="./image/identity_sessions.png" alt="Identity ERD" width="600"/>
 </p>
 
 上图就是 Identity 和 Session 之间的关系图，展示了用户 ID、用户凭证、用户标识、登录会话、登录设备之间的关系。

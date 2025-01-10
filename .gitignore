@@ -1,3 +1,2 @@
-opt/postgresql/data/pgdata
 .DS_Store
-postgresql/data/pgdata
+**/pgdata
