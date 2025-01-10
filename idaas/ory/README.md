@@ -152,11 +152,44 @@ Kratos 允许用户自己配置注册、登录、用户设置、账号恢复等�
 - selfservice_verification_flows 生成一条邮箱验证流程，有效期是 1 个小时，处于 sent_email 状态。
 - courier_messages、courier_message_dispatches 生成几条邮箱验证链接发送记录，本测试会发送失败并重试。
 
+#### identities、identity_credentials、identity_credential_identifiers、sessions、session_devices 表的特别说明
+
 <p align="center">
   <img src="./image/identity_sessions.png" alt="Identity ERD" width="800"/>
 </p>
 
-上图就是 Identity 和 Session 之间的关系图，展示了用户 ID、用户凭证、用户标识、登录会话、登录设备之间的关系。
+在 ORY Kratos 中，这些表共同构成了身份管理系统的核心部分。它们分别用于存储用户身份、凭证、会话等信息，并且相互关联以实现完整的身份和会话管理功能。以下是每个表的作用和它们之间的关系：
+
+1. **identities**:
+
+   - **作用**: 存储用户的身份信息。每个用户在系统中对应一条记录。
+   - **内容**: 包含用户的基本信息，如 ID、traits（用户属性）等。
+   - **关系**: 通过用户 ID 关联到 `identity_credentials` 表。
+
+2. **identity_credentials**:
+
+   - **作用**: 存储与身份关联的凭证信息。
+   - **内容**: 包含不同类型的凭证信息，如密码、OAuth2 凭证等。
+   - **关系**: 与 `identities` 表关联，标识某个身份的凭证。
+
+3. **identity_credential_identifiers**:
+
+   - **作用**: 存储凭证的标识，比如用户名、电子邮件等。
+   - **内容**: 包含凭证标识和凭证类型的映射。
+   - **关系**: 与 `identity_credentials` 表关联，用于快速查找和验证凭证。
+
+4. **sessions**:
+
+   - **作用**: 存储用户会话信息。
+   - **内容**: 包含会话的状态、创建时间、过期时间等信息。
+   - **关系**: 与 `identities` 表关联，以标识特定用户的会话。
+
+5. **session_devices**:
+   - **作用**: 存储与用户会话相关的设备信息。
+   - **内容**: 包含设备类型、操作系统、浏览器信息等。
+   - **关系**: 与 `sessions` 表关联，以记录用户会话使用的设备。
+
+这些表通过用户 ID 和凭证 ID 等字段相互关联，形成一个完整的身份和会话管理体系。这种设计允许 ORY Kratos 灵活地管理用户身份信息、凭证验证以及会话跟踪，支持多种身份验证和授权场景。更多详细信息可以在 ORY Kratos 的官方文档中找到。
 
 ### 用户登录
 
@@ -202,9 +235,31 @@ password (Thu, 09 Jan 2025 06:59:46 GMT)
 
 ### 用户设置
 
-在 http://127.0.0.1:4455/welcome 页面上点击左侧的 Account Settings，打开用户设置页面，可以看到邮箱、密码等可以修改。
+在 http://127.0.0.1:4455/welcome 页面上，处于登录状态下，点击左侧的 Account Settings，打开用户设置页面，可以看到邮箱、密码等可以修改。
+
+以修改密码为例，设置好新密码后点击保存，会要求重新登录，此时输入**旧密码**并提交，就可以完成修改。后台的数据库发生了如下变更：
+
+- selfservice_settings_flows 生成一条用户设置流程，有效期是 1 个小时，处于 show_form 状态，最终修改成功后变成 success 状态。
+- continuity_containers 生成一条记录新密码的临时记录，最终在用户设置成功后，这条记录会被删除。
+- selfservice_login_flows 生成一条新的登录流程，有效期是 1 个小时。这是因为用户修改密码后回到了登录页面，又初始化了一条登录流程。
+- sessions 重新登录后，当前的登录会话过期时间会刷新，并记录了登录方法。
+- identities 当前的用户 ID 会更新。
+- identity_credentials、identity_credential_identifiers 原登录标识（邮箱）和凭证（密码）会被删除，重新生成新的登录标识和凭证。
+
+#### continuity_containers 表的特别说明
+
+在 ORY Kratos 中，continuity_containers 表用于支持会话的连续性管理。具体来说，它用于存储在用户身份验证和会话管理过程中需要保持状态的信息。以下是一些关键用途：
+
+- 状态存储 : continuity_containers 表用于存储与用户会话相关的临时状态信息，这些信息在多步骤的身份验证流程中是必要的。例如，在处理多因素身份验证（MFA）或复杂的注册流程时，可能需要在不同步骤之间保持某些状态。
+- 临时数据 : 在身份验证过程中，某些数据需要暂时保存以供后续步骤使用，比如验证码、挑战问题的答案等。这些数据通常具有短期有效性。
+- 防止重放攻击 : 通过保存会话状态，可以确保请求的顺序和完整性，防止攻击者重放先前的请求进行恶意操作。
+- 自定义登录/注册流程 : 如果应用程序实现了自定义的登录或注册流程，continuity_containers 表可以用于存储流程的中间状态，确保用户体验的流畅性。
+
+需要注意的是，continuity_containers 表中的数据通常是短期的，并且会在会话完成或超时后清理，以确保系统的高效和安全。具体的实现和配置细节可以在 ORY Kratos 的官方文档中找到。
 
 ### 账号恢复
+
+在 http://127.0.0.1:4455/welcome 页面上点击左侧的 Account Recovery，打开用户账号恢复页面，可以填写邮箱获取验证码，验证通过后会跳转到用户设置的页面，此时已经处于登录状态，可以进行密码修改等操作，后续逻辑同上面的用户设置。
 
 ### 邮箱验证
 

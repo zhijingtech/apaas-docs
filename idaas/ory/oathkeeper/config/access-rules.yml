@@ -40,6 +40,7 @@
     url: "http://127.0.0.1:4455/<{sessions,settings}>"
     methods:
       - GET
+      - POST
   authenticators:
     - handler: cookie_session
   authorizer:
