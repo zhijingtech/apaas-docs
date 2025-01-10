@@ -4,4 +4,4 @@
 
 ### IDaaS
 
-- [ORY全家桶](./idaas/ory/README)
+- [ORY全家桶](./idaas/ory/README.md)
