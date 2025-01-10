@@ -1,4 +1,4 @@
-# ORY 全家桶一瞥
+# ORY 全家桶
 
 随着互联网应用的复杂性不断增加，身份管理和访问控制成为开发者必须面对的挑战。对于一个现代化的应用来说，如何高效地管理用户身份、确保安全的访问控制是至关重要的。在这篇文章中，我们将一瞥 ORY 全家桶，探索其在身份即服务（IDaaS）领域中提供的解决方案，涵盖了登录认证、用户 ID 管理、权限和访问控制、API 访问和 OAuth2 等大部分关联知识。
 
@@ -12,7 +12,7 @@ ORY 全家桶是一个开源的身份管理解决方案集合，旨在为开发�
 4. ORY Oathkeeper：一个身份和访问代理，用于保护 API 和应用的入口。
 
 <p align="center">
-  <img src="https://www.ory.sh/docs/assets/images/1-42e65393379b7f7ddc3f9a05474f27ac.png" alt="ORY" width="600"/>
+  <img src="https://www.ory.sh/docs/assets/images/1-42e65393379b7f7ddc3f9a05474f27ac.png" alt="ORY" width="800"/>
 </p>
 
 ### ORY Kratos
@@ -129,13 +129,13 @@ INSERT INTO schema_migration ("version", version_self) VALUES('20150100000001000
 
 如果没有容器在不停的重启，基本上代表部署成功了。
 
-### 场景测试
+## ORY 全家桶测试
 
 所有的测试请求都通过 Oathkeeper Proxy 转发其他模块，转发规则详见 Oathkeeper 的配置文件 rules.json，后续不再特别说明。如果将 ORY 应用于生产，通过 Oathkeeper 或者其他网关构建零信任系统，禁止业务接口直接暴露外网，是一种比较安全的设计。
 
 Kratos 允许用户自己配置注册、登录、用户设置、账号恢复等流程，流程又分成了 browser（适用于浏览器端，有重定向和 Cookies 逻辑）和 api（适用于移动端）两种，使用的安全措施会有所不同但是返回的模型一致。详见：https://www.ory.sh/docs/kratos/self-service。
 
-#### 用户注册
+### 用户注册
 
 这里为了测试方便，我们直接打开 ORY 官方提供的 kratos-selfservice-ui-node 来测试。首选打开 http://127.0.0.1:4455/welcome，并点击左侧的 Sign Up，打开用户注册的页面，输入邮箱密码并提交，然后验证邮箱。由于我们用的是本地测试，没有真的发邮件，可以打开 http://127.0.0.1:4436/ 查看消息发送记录，找到用于邮箱验证的 code。验证通过后，用户注册流程完成。
 
@@ -153,12 +153,12 @@ Kratos 允许用户自己配置注册、登录、用户设置、账号恢复等�
 - courier_messages、courier_message_dispatches 生成几条邮箱验证链接发送记录，本测试会发送失败并重试。
 
 <p align="center">
-  <img src="./image/identity_sessions.png" alt="Identity ERD" width="600"/>
+  <img src="./image/identity_sessions.png" alt="Identity ERD" width="800"/>
 </p>
 
 上图就是 Identity 和 Session 之间的关系图，展示了用户 ID、用户凭证、用户标识、登录会话、登录设备之间的关系。
 
-#### 用户登录
+### 用户登录
 
 再次打开 http://127.0.0.1:4455/welcome，并点击左侧的 Sign In，打开用户登录页面，输入邮箱密码并提交，登录成功后返回 welcome，点击左侧的 Session Information 就可以看到登录信息了。
 
@@ -191,7 +191,7 @@ password (Thu, 09 Jan 2025 06:59:46 GMT)
 - sessions 生产另一条会话记录，用于登录状态的保持，处于激活状态。
 - session_devices 生成一条登录设备记录，关联上面的会话。
 
-#### 用户登出
+### 用户登出
 
 在 http://127.0.0.1:4455/welcome 页面上点击左侧的 Log Out，可以看到用户登出成功。
 
@@ -200,15 +200,15 @@ password (Thu, 09 Jan 2025 06:59:46 GMT)
 - sessions 登录时的会话变成非激活状态。
 - selfservice_login_flows 生成了一条新的登录流程，有效期是 1 个小时。这是因为用户登出后回到了登录页面，有初始化了一条登录流程。
 
-#### 用户设置
+### 用户设置
 
 在 http://127.0.0.1:4455/welcome 页面上点击左侧的 Account Settings，打开用户设置页面，可以看到邮箱、密码等可以修改。
 
-#### 账号恢复
+### 账号恢复
 
-#### 邮箱验证
+### 邮箱验证
 
-#### 2FA/MFA
+### 2FA/MFA
 
 ---
 
