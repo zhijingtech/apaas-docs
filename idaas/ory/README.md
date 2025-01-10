@@ -1,10 +1,10 @@
 # ORY 全家桶
 
-随着互联网应用的复杂性不断增加，身份管理和访问控制成为开发者必须面对的挑战。对于一个现代化的应用来说，如何高效地管理用户身份、确保安全的访问控制是至关重要的。在这篇文章中，我们将一瞥 ORY 全家桶，探索其在身份即服务（IDaaS）领域中提供的解决方案，涵盖了登录认证、用户 ID 管理、权限和访问控制、API 访问和 OAuth2 等大部分关联知识。
+随着互联网应用的日益复杂，身份管理和访问控制成为开发者必须攻克的关键挑战。为了打造高效且安全的现代化应用，我们亟需一套强大的解决方案。本文将深入探讨 ORY 全家桶，在身份即服务（IDaaS）领域，它为我们提供了涵盖登录认证、用户 ID 管理、权限和访问控制、API 访问和 OAuth2 等全方位的解决方案。
 
 ## ORY 全家桶简介
 
-ORY 全家桶是一个开源的身份管理解决方案集合，旨在为开发者提供一套完整的工具来解决身份认证与授权的问题。ORY 全家桶包括以下几个核心组件：
+ORY 全家桶是一个开源的身份管理解决方案集合，旨在为开发者提供一套全面的工具，以解决身份认证与授权问题。其核心组件包括：
 
 1. ORY Kratos：一个用户管理系统，专注于自定义用户登录、注册和身份管理。
 2. ORY Hydra：一个 OAuth2 和 OpenID Connect 服务器，帮助应用实现安全的用户登录和 API 访问。
@@ -17,7 +17,7 @@ ORY 全家桶是一个开源的身份管理解决方案集合，旨在为开发�
 
 ### ORY Kratos
 
-Kratos 的领域模型围绕用户身份管理展开，包括用户身份、会话、身份验证器、恢复策略等。
+Kratos 的领域模型专注于用户身份管理，涵盖了用户身份、会话、身份验证器和恢复策略等多个方面。
 
 - 用户身份 ：用户的基本信息和认证数据。
 - 会话 ：用户的登录状态。
@@ -36,7 +36,7 @@ Kratos 的领域模型围绕用户身份管理展开，包括用户身份、会�
 
 ### ORY Hydra
 
-ORY Hydra 专注于 OAuth2 和 OpenID Connect 协议的实现。其领域模型包括客户端、授权请求、访问令牌、刷新令牌等实体。
+ORY Hydra 专注于实现 OAuth2 和 OpenID Connect 协议，其领域模型涵盖了客户端、授权请求、访问令牌、刷新令牌等多个关键实体。
 
 - 客户端 ：代表可以请求访问令牌的应用程序。
 - 授权请求 ：用户同意或拒绝访问请求的流程。
@@ -55,7 +55,7 @@ ORY Hydra 专注于 OAuth2 和 OpenID Connect 协议的实现。其领域模型�
 
 ### ORY Keto
 
-Keto 基于 Google Zanzibar 模型进行权限管理，核心模型包括关系、角色、权限、资源等。
+Keto 基于 Google Zanzibar 模型进行权限管理，其核心模型包括关系、角色、权限和资源等多个方面。
 
 - 关系 ：定义用户、角色、资源之间的关联。
 - 角色 ：用户可以被赋予不同的角色，每个角色具有特定的权限。
@@ -73,7 +73,7 @@ Keto 基于 Google Zanzibar 模型进行权限管理，核心模型包括关系�
 
 ### ORY Oathkeeper
 
-Oathkeeper 作为一个身份和访问代理，其模型包括规则、身份提供者、认证器、授权者等。
+Oathkeeper 作为身份和访问代理，其模型涵盖了规则、身份提供者、认证器和授权者等多个关键组件。
 
 - 规则 ：定义请求的处理逻辑，包括身份验证和授权。
 - 身份提供者 ：外部系统，提供身份验证服务。
@@ -92,7 +92,7 @@ Oathkeeper 作为一个身份和访问代理，其模型包括规则、身份提
 
 ## ORY 全家桶部署
 
-部署 ORY 全家桶并不复杂，下面是一个简单的指南，帮助你在本地环境中快速启动：
+部署 ORY 全家桶并不复杂，以下是一个简洁的指南，帮助您快速在本地环境中启动它：
 
 ### 环境准备
 
@@ -131,7 +131,7 @@ INSERT INTO schema_migration ("version", version_self) VALUES('20150100000001000
 
 ## ORY 全家桶测试
 
-所有的测试请求都通过 Oathkeeper Proxy 转发其他模块，转发规则详见 Oathkeeper 的配置文件 rules.json，后续不再特别说明。如果将 ORY 应用于生产，通过 Oathkeeper 或者其他网关构建零信任系统，禁止业务接口直接暴露外网，是一种比较安全的设计。
+所有测试请求均通过 Oathkeeper Proxy 转发至其他模块，具体转发规则请参见 Oathkeeper 的配置文件 [access-rules.yml](oathkeeper/config/access-rules.yml)，后续将不再赘述。如果将 ORY 应用于生产，通过 Oathkeeper 或者其他网关构建零信任系统，禁止业务接口直接暴露外网，是一种比较安全的设计。
 
 Kratos 允许用户自己配置注册、登录、用户设置、账号恢复等流程，流程又分成了 browser（适用于浏览器端，有重定向和 Cookies 逻辑）和 api（适用于移动端）两种，使用的安全措施会有所不同但是返回的模型一致。详见：https://www.ory.sh/docs/kratos/self-service。
 
@@ -152,7 +152,7 @@ Kratos 允许用户自己配置注册、登录、用户设置、账号恢复等�
 - selfservice_verification_flows 生成一条邮箱验证流程，有效期是 1 个小时，处于 sent_email 状态。
 - courier_messages、courier_message_dispatches 生成几条邮箱验证链接发送记录，本测试会发送失败并重试。
 
-#### identities、identity_credentials、identity_credential_identifiers、sessions、session_devices 表的特别说明
+#### identities、identity_credentials、identity_credential_identifiers、sessions、session_devices 表的补充说明
 
 <p align="center">
   <img src="./image/identity_sessions.png" alt="Identity ERD" width="800"/>
@@ -231,7 +231,7 @@ password (Thu, 09 Jan 2025 06:59:46 GMT)
 此时后台的数据库发生了如下变更：
 
 - sessions 登录时的会话变成非激活状态。
-- selfservice_login_flows 生成了一条新的登录流程，有效期是 1 个小时。这是因为用户登出后回到了登录页面，有初始化了一条登录流程。
+- selfservice_login_flows 生成了一条新的登录流程，有效期是 1 个小时。这是因为用户登出后回到了登录页面，又初始化了一条登录流程。
 
 ### 用户设置
 
@@ -246,7 +246,7 @@ password (Thu, 09 Jan 2025 06:59:46 GMT)
 - identities 当前的用户 ID 会更新。
 - identity_credentials、identity_credential_identifiers 原登录标识（邮箱）和凭证（密码）会被删除，重新生成新的登录标识和凭证。
 
-#### continuity_containers 表的特别说明
+#### continuity_containers 表的补充说明
 
 在 ORY Kratos 中，continuity_containers 表用于支持会话的连续性管理。具体来说，它用于存储在用户身份验证和会话管理过程中需要保持状态的信息。以下是一些关键用途：
 
@@ -259,18 +259,33 @@ password (Thu, 09 Jan 2025 06:59:46 GMT)
 
 ### 账号恢复
 
-在 http://127.0.0.1:4455/welcome 页面上点击左侧的 Account Recovery，打开用户账号恢复页面，可以填写邮箱获取验证码，验证通过后会跳转到用户设置的页面，此时已经处于登录状态，可以进行密码修改等操作，后续逻辑同上面的用户设置。
+在 http://127.0.0.1:4455/welcome 页面上，处于未登录状态下，点击左侧的 Account Recovery，打开用户账号恢复页面，填写邮箱获取验证码，验证通过后会跳转到用户设置的页面，此时已经处于登录状态，可以直接修改密码保存。这里修改密码的流程跟用户设置有所不同，不需要用旧密码验证，因为此时已经通过 code 验证。从这里也可以看出 ory 设计的巧妙之处，定义不同的流程，可以灵活应对不同的场景。
 
-### 邮箱验证
+此时后台的数据库发生了如下变更：
+
+- selfservice_recovery_flows 生成一条账号恢复流程，有效期是 1 个小时，此时状态为 choose_method，发送验证码后变为 sent_email，验证成功后变为 passed_challenge。
+- identity_recovery_codes 生成一条账号恢复的验证码，使用后会设置 used_at。
+- courier_messages、courier_message_dispatches 记录了验证码的发送记录，不再展开。
+- sessions 通过 code 验证后，登录成功，生成一条会话记录，处于激活状态。
+- session_devices 生成一条登录设备记录，关联上面的会话。
+- selfservice_settings_flows 生成一条用户设置流程，有效期是 1 个小时，处于 show_form 状态，最终修改成功后变成 success 状态。
+- identities 当前的用户 ID 会更新。
+- identity_credentials、identity_credential_identifiers 原登录标识（邮箱）和凭证（密码）会被删除，重新生成新的登录标识和凭证。
 
 ### 2FA/MFA
 
----
+在 ORY Kratos 中，支持两因素认证（2FA）和多因素认证（MFA）是为了增强用户账户的安全性。2FA/MFA 是一种在用户登录时要求额外身份验证步骤的安全措施，除了基本的用户名和密码之外，还需要提供额外的验证信息。以下是关于 2FA/MFA 的一些关键点：
 
-5. 定义角色和权限：在 Keto 中创建角色和权限，测试不同角色对资源的访问控制。
-6. 验证权限：尝试访问被保护的资源，验证权限控制的有效性。
-   API 保护
-7. 配置 OAuth2 客户端：在 Hydra 中注册一个 OAuth2 客户端。
-8. 获取访问令牌：使用 OAuth2 流程获取访问令牌，测试 API 访问控制。
-   结语
-   ORY 全家桶为开发者提供了一套强大且灵活的工具来管理身份认证和访问控制。通过结合 Hydra、Kratos、Keto 和 Oathkeeper，开发者可以轻松地实现复杂的身份管理和安全策略。如果你的应用需要一个可靠的身份管理解决方案，不妨尝试一下 ORY 全家桶。希望这篇文章能帮助你更好地理解和使用 ORY 全家桶，提升应用的安全性和用户体验。
+2FA/MFA 的类型
+
+- 短信验证码 : 用户在输入用户名和密码后，会收到一条包含验证码的短信，需要在登录页面输入该验证码以完成登录。
+- 电子邮件验证码 : 发送一个验证码到用户的注册邮箱，用户需要输入此验证码以验证身份。
+- 软件令牌（TOTP） : 使用 Google Authenticator 或 Authy 等应用生成的时间基于一次性密码（TOTP），用户在登录时需要输入应用生成的动态验证码。
+- 硬件令牌（如 YubiKey） : 使用物理设备生成或存储的动态密码。
+- 生物识别 : 使用指纹识别、面部识别等生物特征进行身份验证。
+
+ORY Kratos 的支持
+
+- 灵活的身份验证流程 : ORY Kratos 提供了灵活的身份验证流程配置，允许开发者定义不同的验证步骤和条件。通过配置，开发者可以指定在何时要求 2FA/MFA，以及在何种情况下可以跳过或绕过某些验证步骤。
+- 自定义策略 : 开发者可以根据应用的安全需求和用户体验要求，定制 2FA/MFA 的策略，比如只对高风险操作要求 2FA，或者允许用户选择他们喜欢的 2FA 方法。
+- 集成与扩展 : ORY Kratos 支持与第三方身份验证服务集成，并且可以通过插件或扩展的方式添加新的认证因子。
