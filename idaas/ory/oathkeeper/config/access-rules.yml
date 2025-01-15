@@ -66,3 +66,19 @@
     handler: allow
   mutators:
     - handler: noop
+
+- id: "ory:hydra:public"
+  upstream:
+    preserve_host: true
+    url: "http://hydra:4444"
+  match:
+    url: "http://127.0.0.1:4455/oauth2/<{auth,token}>"
+    methods:
+      - GET
+      - POST
+  authenticators:
+    - handler: anonymous
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: noop
