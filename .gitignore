@@ -1,2 +1,2 @@
 .DS_Store
-**/pgdata
+idaas/ory/postgresql/data/pgdata

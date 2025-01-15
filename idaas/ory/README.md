@@ -101,11 +101,11 @@ Oathkeeper 作为身份和访问代理，其模型涵盖了规则、身份提供
 
 ### 部署步骤
 
-我们直接提供了一个 ORY 全家桶部署的 docker-compose.yml 文件，可执行如下命令下载后直接启动：
+我们直接提供了一个 ORY 全家桶部署的 docker-compose.yml 和所有模块的配置，放在本项目的 idaas/ory 目录中：
 
 ```shell
-git clone https://github.com/zhijingtech/ory-all-test.git
-cd ory-all-test
+git clone https://github.com/zhijingtech/apaas-docs.git
+cd apaas-docs/idaas/ory
 docker-compose up
 ```
 
@@ -272,20 +272,49 @@ password (Thu, 09 Jan 2025 06:59:46 GMT)
 - identities 当前的用户 ID 会更新。
 - identity_credentials、identity_credential_identifiers 原登录标识（邮箱）和凭证（密码）会被删除，重新生成新的登录标识和凭证。
 
-### 2FA/MFA
+### 社交登录（OIDC）
 
-在 ORY Kratos 中，支持两因素认证（2FA）和多因素认证（MFA）是为了增强用户账户的安全性。2FA/MFA 是一种在用户登录时要求额外身份验证步骤的安全措施，除了基本的用户名和密码之外，还需要提供额外的验证信息。以下是关于 2FA/MFA 的一些关键点：
+我们以 GitHub 授权登录为例，先上 [GitHub Developer Settings -> OAuth Apps](https://github.com/settings/developers) 创建一个 OAuth App，并获取 Client ID 和 Client Secret。然后回到本项目修改 Kratos 的配置，开启 OIDC 并配置好 OIDC Provider。
 
-2FA/MFA 的类型
+```yaml
+selfservice:
+  ...
+  methods:
+    ...
+    oidc:
+      enabled: true
+      config:
+        providers:
+          - id: github
+            provider: github
+            client_id: <GitHub OAuth App 的 Client ID>
+            client_secret: <GitHub OAuth App 的 Client Secret>
+            issuer_url: https://github.com/login/oauth/authorize
+            mapper_url: "base64://bG9jYWwgY2xhaW1zID0gewogIGVtYWlsX3ZlcmlmaWVkOiBmYWxzZSwKfSArIHN0ZC5leHRWYXIoJ2NsYWltcycpOwp7CiAgaWRlbnRpdHk6IHsKICAgIHRyYWl0czogewogICAgICAvLyBBbGxvd2luZyB1bnZlcmlmaWVkIGVtYWlsIGFkZHJlc3NlcyBlbmFibGVzIGFjY291bnQKICAgICAgLy8gZW51bWVyYXRpb24gYXR0YWNrcywgZXNwZWNpYWxseSBpZiB0aGUgdmFsdWUgaXMgdXNlZCBmb3IKICAgICAgLy8gZS5nLiB2ZXJpZmljYXRpb24gb3IgYXMgYSBwYXNzd29yZCBsb2dpbiBpZGVudGlmaWVyLgogICAgICAvLwogICAgICAvLyBUaGVyZWZvcmUgd2Ugb25seSByZXR1cm4gdGhlIGVtYWlsIGlmIGl0IChhKSBleGlzdHMgYW5kIChiKSBpcyBtYXJrZWQgdmVyaWZpZWQKICAgICAgLy8gYnkgR2l0SHViLgogICAgICBbaWYgJ2VtYWlsJyBpbiBjbGFpbXMgJiYgY2xhaW1zLmVtYWlsX3ZlcmlmaWVkIHRoZW4gJ2VtYWlsJyBlbHNlIG51bGxdOiBjbGFpbXMuZW1haWwsCiAgICB9LAogIH0sCn0="
+            scope:
+              - user:email
+```
 
-- 短信验证码 : 用户在输入用户名和密码后，会收到一条包含验证码的短信，需要在登录页面输入该验证码以完成登录。
-- 电子邮件验证码 : 发送一个验证码到用户的注册邮箱，用户需要输入此验证码以验证身份。
-- 软件令牌（TOTP） : 使用 Google Authenticator 或 Authy 等应用生成的时间基于一次性密码（TOTP），用户在登录时需要输入应用生成的动态验证码。
-- 硬件令牌（如 YubiKey） : 使用物理设备生成或存储的动态密码。
-- 生物识别 : 使用指纹识别、面部识别等生物特征进行身份验证。
+重启 Kratos，打开 http://127.0.0.1:4455/welcome，点击左侧的 Sign In，可以看到多了一个 GitHub 的授权登录，点击后会跳转到 GitHub 授权页面，授权后回到 Kratos，可以看到已经登录成功。
 
-ORY Kratos 的支持
+此时后台的数据库发生了如下变更：
 
-- 灵活的身份验证流程 : ORY Kratos 提供了灵活的身份验证流程配置，允许开发者定义不同的验证步骤和条件。通过配置，开发者可以指定在何时要求 2FA/MFA，以及在何种情况下可以跳过或绕过某些验证步骤。
-- 自定义策略 : 开发者可以根据应用的安全需求和用户体验要求，定制 2FA/MFA 的策略，比如只对高风险操作要求 2FA，或者允许用户选择他们喜欢的 2FA 方法。
-- 集成与扩展 : ORY Kratos 支持与第三方身份验证服务集成，并且可以通过插件或扩展的方式添加新的认证因子。
+- selfservice_login_flows 生成一条登录流程，有效期是 1 个小时，状态为 choose_method，选择 GitHub 授权登陆后，`active_method` 从 `null` 变为 `oidc`。
+- continuity_containers 生成一条记录临时保存 ory_kratos_oidc_auth_code_session。
+- selfservice_registration_flows 由于 GitHub 授权的账号之前没有注册过，所以会生成一条注册流程，有效期是 1 个小时，状态为 choose_method。
+- identities 生成一条新用户记录，提取了 GitHub 的邮箱。
+- identity_verifiable_addresses 生成一条邮箱验证的记录，状态为 `pending`，发送验证链接后变为 `sent`。
+- identity_recovery_addresses 生成一条邮箱恢复链接记录。
+- identity_credentials、identity_credential_identifiers 生成两套用户登录凭证及其标识，一套是邮箱，另一套是 GitHub 的 OpenID。
+- sessions 生成一条会话记录，处于激活状态。
+- session_devices 生成一条登录设备记录，关联上面的会话。
+- identity_verification_codes 生成一条邮箱验证的验证码，使用后会设置 used_at。
+- courier_messages、courier_message_dispatches 记录了邮箱验证链接的发送记录，不再展开。
+
+---
+
+5. 定义角色和权限：在 Keto 中创建角色和权限，测试不同角色对资源的访问控制。
+6. 验证权限：尝试访问被保护的资源，验证权限控制的有效性。
+   API 保护
+7. 配置 OAuth2 客户端：在 Hydra 中注册一个 OAuth2 客户端。
+8. 获取访问令牌：使用 OAuth2 流程获取访问令牌，测试 API 访问控制。
