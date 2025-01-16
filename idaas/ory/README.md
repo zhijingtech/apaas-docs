@@ -405,7 +405,7 @@ groups:admin#member@Neel
   - Hadley 是 marketing 组的成员，可以查看市场报告。
   - Neel 是 admin 组的成员，可以查看和编辑所有报告。
 
-接下来，我们使用 Keto 的命令行工具来创建这些关系。首先，启动 Keto 容器：
+接下来，我们使用 Keto 的命令行工具来创建这些关系。首先执行下面的命令将上面的关系数据导入：
 
 ```shell
 docker compose exec keto keto relation-tuple create /home/ory/policies.json  --insecure-disable-transport-security
@@ -416,7 +416,7 @@ docker compose exec keto keto relation-tuple create /home/ory/policies.json  --i
 ##### Keto 相关表的补充说明
 
 <p align="center">
-  <img src="./image/keto.png" alt="Keto ER" width="800"/>
+  <img src="./image/keto.png" alt="Keto ER" width="400"/>
 </p>
 
 在 ORY Keto 中，数据模型的核心构成是用于定义访问控制策略的关系元组（relation tuples）。以下是各个表的作用和它们之间的关系：
