@@ -1,0 +1,116 @@
+[
+  {
+    "namespace": "reports",
+    "object": "finance",
+    "relation": "view",
+    "subject_set": {
+      "namespace": "groups",
+      "object": "finance",
+      "relation": "member"
+    }
+  },
+  {
+    "namespace": "reports",
+    "object": "community",
+    "relation": "view",
+    "subject_set": {
+      "namespace": "groups",
+      "object": "community",
+      "relation": "member"
+    }
+  },
+  {
+    "namespace": "reports",
+    "object": "marketing",
+    "relation": "view",
+    "subject_set": {
+      "namespace": "groups",
+      "object": "marketing",
+      "relation": "member"
+    }
+  },
+  {
+    "namespace": "reports",
+    "object": "finance",
+    "relation": "edit",
+    "subject_set": {
+      "namespace": "groups",
+      "object": "admin",
+      "relation": "member"
+    }
+  },
+  {
+    "namespace": "reports",
+    "object": "community",
+    "relation": "edit",
+    "subject_set": {
+      "namespace": "groups",
+      "object": "admin",
+      "relation": "member"
+    }
+  },
+  {
+    "namespace": "reports",
+    "object": "marketing",
+    "relation": "edit",
+    "subject_set": {
+      "namespace": "groups",
+      "object": "admin",
+      "relation": "member"
+    }
+  },
+  {
+    "namespace": "reports",
+    "object": "finance",
+    "relation": "view",
+    "subject_set": {
+      "namespace": "groups",
+      "object": "admin",
+      "relation": "member"
+    }
+  },
+  {
+    "namespace": "reports",
+    "object": "community",
+    "relation": "view",
+    "subject_set": {
+      "namespace": "groups",
+      "object": "admin",
+      "relation": "member"
+    }
+  },
+  {
+    "namespace": "reports",
+    "object": "marketing",
+    "relation": "view",
+    "subject_set": {
+      "namespace": "groups",
+      "object": "admin",
+      "relation": "member"
+    }
+  },
+  {
+    "namespace": "groups",
+    "object": "finance",
+    "relation": "member",
+    "subject_id": "Lila"
+  },
+  {
+    "namespace": "groups",
+    "object": "community",
+    "relation": "member",
+    "subject_id": "Dilan"
+  },
+  {
+    "namespace": "groups",
+    "object": "marketing",
+    "relation": "member",
+    "subject_id": "Hadley"
+  },
+  {
+    "namespace": "groups",
+    "object": "admin",
+    "relation": "member",
+    "subject_id": "Neel"
+  }
+]

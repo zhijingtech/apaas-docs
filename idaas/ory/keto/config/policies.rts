@@ -1,0 +1,13 @@
+reports:finance#view@(groups:finance#member)
+reports:community#view@(groups:community#member)
+reports:marketing#view@(groups:marketing#member)
+reports:finance#edit@(groups:admin#member)
+reports:community#edit@(groups:admin#member)
+reports:marketing#edit@(groups:admin#member)
+reports:finance#view@(groups:admin#member)
+reports:community#view@(groups:admin#member)
+reports:marketing#view@(groups:admin#member)
+groups:finance#member@Lila
+groups:community#member@Dilan
+groups:marketing#member@Hadley
+groups:admin#member@Neel

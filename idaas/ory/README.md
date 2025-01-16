@@ -366,10 +366,60 @@ ID Token: ...
 - **hydra_oauth2_trusted_jwt_bearer_issuer**: 存储受信任的 JWT 发行者的信息，用于验证来自可信发行者的 JWT。
 - **hydra_jwk**: 存储 JSON Web Keys，用于签名和验证 JWT。这些密钥是实现安全通信的基础。
 
----
+### Keto 测试
 
-5. 定义角色和权限：在 Keto 中创建角色和权限，测试不同角色对资源的访问控制。
-6. 验证权限：尝试访问被保护的资源，验证权限控制的有效性。
-   API 保护
-7. 配置 OAuth2 客户端：在 Hydra 中注册一个 OAuth2 客户端。
-8. 获取访问令牌：使用 OAuth2 流程获取访问令牌，测试 API 访问控制。
+Keto 提供访问控制和权限管理。它实现了谷歌的权限管理模型 Zanzibar，允许开发者定义复杂的权限关系和访问控制规则，比如：RBAC、ABAC 等。
+
+#### Keto RBAC
+
+首先我们要创建角色、权限和用户的关系。使用官网提供的如下例子：
+
+```
+reports:finance#view@(groups:finance#member)
+reports:community#view@(groups:community#member)
+reports:marketing#view@(groups:marketing#member)
+reports:finance#edit@(groups:admin#member)
+reports:community#edit@(groups:admin#member)
+reports:marketing#edit@(groups:admin#member)
+reports:finance#view@(groups:admin#member)
+reports:community#view@(groups:admin#member)
+reports:marketing#view@(groups:admin#member)
+groups:finance#member@Lila
+groups:community#member@Dilan
+groups:marketing#member@Hadley
+groups:admin#member@Neel
+```
+
+简单解读一下:
+
+- 查看权限（View） ：
+  - 财务报告（reports:finance）可以被 finance 组的成员查看。
+  - 社区报告（reports:community）可以被 community 组的成员查看。
+  - 市场报告（reports:marketing）可以被 marketing 组的成员查看。
+  - 所有类型的报告都可以被 admin 组的成员查看。
+- 编辑权限（Edit） ：
+  - 只有 admin 组的成员可以编辑财务、社区和市场报告。
+- 组成员关系 ：
+  - Lila 是 finance 组的成员，可以查看财务报告。
+  - Dilan 是 community 组的成员，可以查看社区报告。
+  - Hadley 是 marketing 组的成员，可以查看市场报告。
+  - Neel 是 admin 组的成员，可以查看和编辑所有报告。
+
+接下来，我们使用 Keto 的命令行工具来创建这些关系。首先，启动 Keto 容器：
+
+```shell
+docker compose exec keto keto relation-tuple create /home/ory/policies.json  --insecure-disable-transport-security
+```
+
+由于上面导入数据的命令执行失败，本测试等待官方修复后再进行。
+
+##### Keto 相关表的补充说明
+
+<p align="center">
+  <img src="./image/keto.png" alt="Keto ER" width="800"/>
+</p>
+
+在 ORY Keto 中，数据模型的核心构成是用于定义访问控制策略的关系元组（relation tuples）。以下是各个表的作用和它们之间的关系：
+
+- **keto_relation_tuples**：存储所有的关系元组。这些元组定义了主体（subject）、对象（object）以及它们之间的关系（relation），从而实现细粒度的访问控制策略。
+- **keto_uuid_mappings**：存储 UUID 和其字符串表示之间的映射，可能是为了简化查询和提高性能。
