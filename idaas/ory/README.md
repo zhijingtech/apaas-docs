@@ -154,44 +154,19 @@ Kratos 允许用户自己配置注册、登录、用户设置、账号恢复等�
 - selfservice_verification_flows 生成一条邮箱验证流程，有效期是 1 个小时，处于 sent_email 状态。
 - courier_messages、courier_message_dispatches 生成几条邮箱验证链接发送记录，本测试会发送失败并重试。
 
-##### identities、identity_credentials、identity_credential_identifiers、sessions、session_devices 表的补充说明
+##### identity 和 session 相关表的补充说明
 
 <p align="center">
-  <img src="./image/identity_sessions.png" alt="Identity ERD" width="800"/>
+  <img src="./image/identity_sessions.png" alt="Identity ER" width="800"/>
 </p>
 
-在 ORY Kratos 中，这些表共同构成了身份管理系统的核心部分。它们分别用于存储用户身份、凭证、会话等信息，并且相互关联以实现完整的身份和会话管理功能。以下是每个表的作用和它们之间的关系：
+在 ORY Kratos 中，这些表共同构成了身份管理系统的核心部分。它们分别用于存储用户身份、凭证、会话等信息，并且相互关联以实现完整的身份和会话管理功能。以下是各个表的作用和它们之间的关系：
 
-1. **identities**:
-
-   - **作用**: 存储用户的身份信息。每个用户在系统中对应一条记录。
-   - **内容**: 包含用户的基本信息，如 ID、traits（用户属性）等。
-   - **关系**: 通过用户 ID 关联到 `identity_credentials` 表。
-
-2. **identity_credentials**:
-
-   - **作用**: 存储与身份关联的凭证信息。
-   - **内容**: 包含不同类型的凭证信息，如密码、OAuth2 凭证等。
-   - **关系**: 与 `identities` 表关联，标识某个身份的凭证。
-
-3. **identity_credential_identifiers**:
-
-   - **作用**: 存储凭证的标识，比如用户名、电子邮件等。
-   - **内容**: 包含凭证标识和凭证类型的映射。
-   - **关系**: 与 `identity_credentials` 表关联，用于快速查找和验证凭证。
-
-4. **sessions**:
-
-   - **作用**: 存储用户会话信息。
-   - **内容**: 包含会话的状态、创建时间、过期时间等信息。
-   - **关系**: 与 `identities` 表关联，以标识特定用户的会话。
-
-5. **session_devices**:
-   - **作用**: 存储与用户会话相关的设备信息。
-   - **内容**: 包含设备类型、操作系统、浏览器信息等。
-   - **关系**: 与 `sessions` 表关联，以记录用户会话使用的设备。
-
-这些表通过用户 ID 和凭证 ID 等字段相互关联，形成一个完整的身份和会话管理体系。这种设计允许 ORY Kratos 灵活地管理用户身份信息、凭证验证以及会话跟踪，支持多种身份验证和授权场景。更多详细信息可以在 ORY Kratos 的官方文档中找到。
+- **identities**: 这个表存储用户的身份信息。每个身份有一个唯一的 ID（UUID），并且包含与身份相关的特征（traits），这些特征可以是用户的属性信息，如姓名、邮箱等。schema_id 用于定义身份的模式，state 字段表示身份的状态（例如：active, inactive），metadata_public 和 metadata_admin 用于存储公共和管理员可见的元数据。
+- **sessions**: 存储用户会话信息，每个会话有一个唯一的 ID。该表包括会话的创建时间、过期时间、认证时间、会话的状态（active），以及与身份的关联（通过 identity_id 字段）。token 和 logout_token 用于管理会话令牌，aal 表示认证保障级别，authentication_methods 存储用于会话的认证方法。
+- **session_devices**: 这个表存储与用户会话相关的设备信息，包括设备的 IP 地址、用户代理和位置等。它通过 session_id 字段与 sessions 表相关联，用于跟踪用户会话的设备来源。
+- **identity_credentials**: 存储与身份相关的凭证信息。凭证可以是密码、OAuth 令牌等。通过 identity_id 字段与 identities 表关联。config 字段存储凭证的配置，identity_credential_type_id 用于标识凭证的类型（如密码、OAuth 等）。
+- **identity_credential_identifiers**: 存储凭证标识符，如用户名或邮箱地址。通过 identity_credential_id 字段与 identity_credentials 表关联，并通过 identity_credential_type_id 标识凭证类型。
 
 #### Kratos 用户登录
 
@@ -319,16 +294,19 @@ Hydra 是一个开源的 OAuth2 和 OpenID Connect 提供者，它提供了身�
 
 #### Hydra OAuth 2.0
 
+由于没能成功集成 Kratos，所以只演示了官方文档中 Hydra 的单独测试，consent 提供了用户登录能力，后续如果集成 Kratos 成功再考虑更新。
+
 首先创建一个客户端，用于测试 OAuth2 流程。进入本项目目录 idaas/ory，执行以下命令：
 
 ```shell
 code_client=$(docker compose exec hydra \
     hydra create client \
+    --format json \
     --endpoint http://127.0.0.1:4445 \
     --grant-type authorization_code,refresh_token \
-    --response-type code,id_token \
-    --format json \
-    --scope openid --scope offline \
+    --response-type code,id_token,email \
+    --scope openid,offline_access,profile,email \
+    --token-endpoint-auth-method client_secret_post \
     --redirect-uri http://127.0.0.1:5555/callback)
 
 code_client_id=$(echo $code_client | jq -r '.client_id')
@@ -343,8 +321,8 @@ docker compose exec hydra \
     --client-id $code_client_id \
     --client-secret $code_client_secret \
     --endpoint http://127.0.0.1:4444/ \
-    --port 5555 \
-    --scope openid --scope offline
+    --scope openid,offline_access,profile,email \
+    --port 5555
 ```
 
 在页面上点击 Authorize application，输入用户名和密码，点击 Log in，选中 openid 和 offline，点击 Allow access，就可以得到如下信息：
@@ -357,8 +335,36 @@ ID Token: ...
 ```
 
 此时后台的数据库发生了如下变更：
-- hydra_oauth2_authentication_session 生成一条 OAuth2 认证会话记录，里面记录了 subject。
 
+- hydra_oauth2_authentication_session 生成一条 OAuth2 认证会话记录，里面记录的 subject 就是登录凭证标识邮箱。
+- hydra_oauth2_flow 生成一条 OAuth2 流程记录，状态为 6，另外保存了 OAuth 2.0 的各种信息。
+- hydra_oauth2_code 生成一条授权码记录，处于激活状态，保存了签名和会话等数据，用完就标记成非激活状态。
+- hydra_oauth2_oidc 生成一条 OpenID Connect 记录，保存了授权范围、会话数据和用户信息等。
+- hydra_oauth2_pkce 生成一条 PKCE 记录，用完就删除。
+- hydra_oauth2_access 生成一条访问令牌记录，处于激活状态，保存了签名和会话等数据。
+- hydra_oauth2_refresh 生成一条刷新令牌记录，处于激活状态，保存了签名和会话等数据。
+
+##### Hydra 相关表的补充说明
+
+<p align="center">
+  <img src="./image/hydra.png" alt="Hydra ER" width="800"/>
+</p>
+
+在 ORY Hydra 中，这些表共同构成了 OAuth 2.0 和 OpenID Connect 授权和认证系统。以下是各个表的作用和它们之间的关系：
+
+- **hydra_client**: 存储 OAuth 2.0 客户端的信息，如客户端 ID、名称、密钥、重定向 URI、授权方式等。它是其他表（如授权码、刷新令牌等）引用的核心实体。
+- **hydra_oauth2_code**: 存储 OAuth 2.0 授权码的数据，包括请求 ID、客户端 ID、授权范围、会话数据等。这些授权码用于交换访问令牌。
+- **hydra_oauth2_refresh**: 存储刷新令牌的信息。刷新令牌用于获取新的访问令牌而不需要用户重新授权。
+- **hydra_oauth2_access**: 存储访问令牌的数据，包括令牌签名、请求 ID、客户端 ID、授权范围、会话数据、用户信息、令牌的有效性状态等。访问令牌是 OAuth 2.0 流程的核心部分，用于访问受保护的资源。
+- **hydra_oauth2_pkce**: 存储与 PKCE（Proof Key for Code Exchange）相关的授权码信息。PKCE 是一种增强 OAuth 2.0 安全性的机制，主要用于公共客户端（如移动应用）。
+- **hydra_oauth2_oidc**: 存储 OpenID Connect 相关的数据，包括授权范围、会话数据和用户信息等。
+- **hydra_oauth2_flow**: 存储与 OAuth 2.0 授权流程相关的信息，包括登录和同意请求的详细信息。这张表是实现登录和授权流程的关键。
+- **hydra_oauth2_authentication_session**: 存储用户的认证会话数据，包括用户 ID、认证时间等。用于管理用户的登录会话。
+- **hydra_oauth2_obfuscated_authentication_session**: 存储经过混淆处理的认证会话数据，以保护用户隐私。
+- **hydra_oauth2_logout_request**: 存储与注销请求相关的数据，包括客户端 ID、注销挑战等。
+- **hydra_oauth2_jti_blacklist**: 存储被列入黑名单的 JWT（JSON Web Token）ID，用于撤销令牌。
+- **hydra_oauth2_trusted_jwt_bearer_issuer**: 存储受信任的 JWT 发行者的信息，用于验证来自可信发行者的 JWT。
+- **hydra_jwk**: 存储 JSON Web Keys，用于签名和验证 JWT。这些密钥是实现安全通信的基础。
 
 ---
 
