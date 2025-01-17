@@ -101,11 +101,11 @@ Oathkeeper 作为身份和访问代理，其模型涵盖了规则、身份提供
 
 ### 部署步骤
 
-我们直接提供了一个 ORY 全家桶部署的 docker-compose.yml 和所有模块的配置，放在本项目的 idaas/ory 目录中：
+我们直接提供了一个 ORY 全家桶部署的 docker-compose.yml 和所有模块的配置，放在本项目的 idaas/ory-self-hosting 目录中：
 
 ```shell
 git clone https://github.com/zhijingtech/apaas-docs.git
-cd apaas-docs/idaas/ory
+cd apaas-docs/idaas/ory-self-hosting
 docker-compose up
 ```
 
@@ -137,6 +137,18 @@ INSERT INTO schema_migration ("version", version_self) VALUES('20150100000001000
 
 Kratos 允许用户自己配置注册、登录、用户设置、账号恢复等流程，流程又分成了 browser（适用于浏览器端，有重定向和 Cookies 逻辑）和 api（适用于移动端）两种，使用的安全措施会有所不同但是返回的模型一致。详见：https://www.ory.sh/docs/kratos/self-service。
 
+<p align="center">
+  <img src="./image/identity_sessions.png" alt="Identity ER" width="800"/>
+</p>
+
+在 ORY Kratos 中，这些表共同构成了身份管理系统的核心部分。它们分别用于存储用户身份、凭证、会话等信息，并且相互关联以实现完整的身份和会话管理功能。以下是各个表的作用和它们之间的关系：
+
+- **identities**: 这个表存储用户的身份信息。每个身份有一个唯一的 ID（UUID），并且包含与身份相关的特征（traits），这些特征可以是用户的属性信息，如姓名、邮箱等。schema_id 用于定义身份的模式，state 字段表示身份的状态（例如：active, inactive），metadata_public 和 metadata_admin 用于存储公共和管理员可见的元数据。
+- **sessions**: 存储用户会话信息，每个会话有一个唯一的 ID。该表包括会话的创建时间、过期时间、认证时间、会话的状态（active），以及与身份的关联（通过 identity_id 字段）。token 和 logout_token 用于管理会话令牌，aal 表示认证保障级别，authentication_methods 存储用于会话的认证方法。
+- **session_devices**: 这个表存储与用户会话相关的设备信息，包括设备的 IP 地址、用户代理和位置等。它通过 session_id 字段与 sessions 表相关联，用于跟踪用户会话的设备来源。
+- **identity_credentials**: 存储与身份相关的凭证信息。凭证可以是密码、OAuth 令牌等。通过 identity_id 字段与 identities 表关联。config 字段存储凭证的配置，identity_credential_type_id 用于标识凭证的类型（如密码、OAuth 等）。
+- **identity_credential_identifiers**: 存储凭证标识符，如用户名或邮箱地址。通过 identity_credential_id 字段与 identity_credentials 表关联，并通过 identity_credential_type_id 标识凭证类型。
+
 #### Kratos 用户注册
 
 这里为了测试方便，我们直接打开 ORY 官方提供的 kratos-selfservice-ui-node 来测试。首选打开 http://127.0.0.1:4455/welcome，并点击左侧的 Sign Up，打开用户注册的页面，输入邮箱密码并提交，然后验证邮箱。由于我们用的是本地测试，没有真的发邮件，可以打开 http://127.0.0.1:4436/ 查看消息发送记录，找到用于邮箱验证的 code。验证通过后，用户注册流程完成。
@@ -153,20 +165,6 @@ Kratos 允许用户自己配置注册、登录、用户设置、账号恢复等�
 - session_devices 生成一条登录设备记录，关联上面的会话。
 - selfservice_verification_flows 生成一条邮箱验证流程，有效期是 1 个小时，处于 sent_email 状态。
 - courier_messages、courier_message_dispatches 生成几条邮箱验证链接发送记录，本测试会发送失败并重试。
-
-##### identity 和 session 相关表的补充说明
-
-<p align="center">
-  <img src="./image/identity_sessions.png" alt="Identity ER" width="800"/>
-</p>
-
-在 ORY Kratos 中，这些表共同构成了身份管理系统的核心部分。它们分别用于存储用户身份、凭证、会话等信息，并且相互关联以实现完整的身份和会话管理功能。以下是各个表的作用和它们之间的关系：
-
-- **identities**: 这个表存储用户的身份信息。每个身份有一个唯一的 ID（UUID），并且包含与身份相关的特征（traits），这些特征可以是用户的属性信息，如姓名、邮箱等。schema_id 用于定义身份的模式，state 字段表示身份的状态（例如：active, inactive），metadata_public 和 metadata_admin 用于存储公共和管理员可见的元数据。
-- **sessions**: 存储用户会话信息，每个会话有一个唯一的 ID。该表包括会话的创建时间、过期时间、认证时间、会话的状态（active），以及与身份的关联（通过 identity_id 字段）。token 和 logout_token 用于管理会话令牌，aal 表示认证保障级别，authentication_methods 存储用于会话的认证方法。
-- **session_devices**: 这个表存储与用户会话相关的设备信息，包括设备的 IP 地址、用户代理和位置等。它通过 session_id 字段与 sessions 表相关联，用于跟踪用户会话的设备来源。
-- **identity_credentials**: 存储与身份相关的凭证信息。凭证可以是密码、OAuth 令牌等。通过 identity_id 字段与 identities 表关联。config 字段存储凭证的配置，identity_credential_type_id 用于标识凭证的类型（如密码、OAuth 等）。
-- **identity_credential_identifiers**: 存储凭证标识符，如用户名或邮箱地址。通过 identity_credential_id 字段与 identity_credentials 表关联，并通过 identity_credential_type_id 标识凭证类型。
 
 #### Kratos 用户登录
 
@@ -292,11 +290,31 @@ selfservice:
 
 Hydra 是一个开源的 OAuth2 和 OpenID Connect 提供者，它提供了身份验证和授权服务。
 
+<p align="center">
+  <img src="./image/hydra.png" alt="Hydra ER" width="800"/>
+</p>
+
+在 ORY Hydra 中，这些表共同构成了 OAuth 2.0 和 OpenID Connect 授权和认证系统。以下是各个表的作用和它们之间的关系：
+
+- **hydra_client**: 存储 OAuth 2.0 客户端的信息，如客户端 ID、名称、密钥、重定向 URI、授权方式等。它是其他表（如授权码、刷新令牌等）引用的核心实体。
+- **hydra_oauth2_code**: 存储 OAuth 2.0 授权码的数据，包括请求 ID、客户端 ID、授权范围、会话数据等。这些授权码用于交换访问令牌。
+- **hydra_oauth2_refresh**: 存储刷新令牌的信息。刷新令牌用于获取新的访问令牌而不需要用户重新授权。
+- **hydra_oauth2_access**: 存储访问令牌的数据，包括令牌签名、请求 ID、客户端 ID、授权范围、会话数据、用户信息、令牌的有效性状态等。访问令牌是 OAuth 2.0 流程的核心部分，用于访问受保护的资源。
+- **hydra_oauth2_pkce**: 存储与 PKCE（Proof Key for Code Exchange）相关的授权码信息。PKCE 是一种增强 OAuth 2.0 安全性的机制，主要用于公共客户端（如移动应用）。
+- **hydra_oauth2_oidc**: 存储 OpenID Connect 相关的数据，包括授权范围、会话数据和用户信息等。
+- **hydra_oauth2_flow**: 存储与 OAuth 2.0 授权流程相关的信息，包括登录和同意请求的详细信息。这张表是实现登录和授权流程的关键。
+- **hydra_oauth2_authentication_session**: 存储用户的认证会话数据，包括用户 ID、认证时间等。用于管理用户的登录会话。
+- **hydra_oauth2_obfuscated_authentication_session**: 存储经过混淆处理的认证会话数据，以保护用户隐私。
+- **hydra_oauth2_logout_request**: 存储与注销请求相关的数据，包括客户端 ID、注销挑战等。
+- **hydra_oauth2_jti_blacklist**: 存储被列入黑名单的 JWT（JSON Web Token）ID，用于撤销令牌。
+- **hydra_oauth2_trusted_jwt_bearer_issuer**: 存储受信任的 JWT 发行者的信息，用于验证来自可信发行者的 JWT。
+- **hydra_jwk**: 存储 JSON Web Keys，用于签名和验证 JWT。这些密钥是实现安全通信的基础。
+
 #### Hydra OAuth 2.0
 
 由于没能成功集成 Kratos，所以只演示了官方文档中 Hydra 的单独测试，consent 提供了用户登录能力，后续如果集成 Kratos 成功再考虑更新。
 
-首先创建一个客户端，用于测试 OAuth2 流程。进入本项目目录 idaas/ory，执行以下命令：
+首先创建一个客户端，用于测试 OAuth2 流程。进入本项目目录 idaas/ory-self-hosting，执行以下命令：
 
 ```shell
 code_client=$(docker compose exec hydra \
@@ -344,31 +362,18 @@ ID Token: ...
 - hydra_oauth2_access 生成一条访问令牌记录，处于激活状态，保存了签名和会话等数据。
 - hydra_oauth2_refresh 生成一条刷新令牌记录，处于激活状态，保存了签名和会话等数据。
 
-##### Hydra 相关表的补充说明
-
-<p align="center">
-  <img src="./image/hydra.png" alt="Hydra ER" width="800"/>
-</p>
-
-在 ORY Hydra 中，这些表共同构成了 OAuth 2.0 和 OpenID Connect 授权和认证系统。以下是各个表的作用和它们之间的关系：
-
-- **hydra_client**: 存储 OAuth 2.0 客户端的信息，如客户端 ID、名称、密钥、重定向 URI、授权方式等。它是其他表（如授权码、刷新令牌等）引用的核心实体。
-- **hydra_oauth2_code**: 存储 OAuth 2.0 授权码的数据，包括请求 ID、客户端 ID、授权范围、会话数据等。这些授权码用于交换访问令牌。
-- **hydra_oauth2_refresh**: 存储刷新令牌的信息。刷新令牌用于获取新的访问令牌而不需要用户重新授权。
-- **hydra_oauth2_access**: 存储访问令牌的数据，包括令牌签名、请求 ID、客户端 ID、授权范围、会话数据、用户信息、令牌的有效性状态等。访问令牌是 OAuth 2.0 流程的核心部分，用于访问受保护的资源。
-- **hydra_oauth2_pkce**: 存储与 PKCE（Proof Key for Code Exchange）相关的授权码信息。PKCE 是一种增强 OAuth 2.0 安全性的机制，主要用于公共客户端（如移动应用）。
-- **hydra_oauth2_oidc**: 存储 OpenID Connect 相关的数据，包括授权范围、会话数据和用户信息等。
-- **hydra_oauth2_flow**: 存储与 OAuth 2.0 授权流程相关的信息，包括登录和同意请求的详细信息。这张表是实现登录和授权流程的关键。
-- **hydra_oauth2_authentication_session**: 存储用户的认证会话数据，包括用户 ID、认证时间等。用于管理用户的登录会话。
-- **hydra_oauth2_obfuscated_authentication_session**: 存储经过混淆处理的认证会话数据，以保护用户隐私。
-- **hydra_oauth2_logout_request**: 存储与注销请求相关的数据，包括客户端 ID、注销挑战等。
-- **hydra_oauth2_jti_blacklist**: 存储被列入黑名单的 JWT（JSON Web Token）ID，用于撤销令牌。
-- **hydra_oauth2_trusted_jwt_bearer_issuer**: 存储受信任的 JWT 发行者的信息，用于验证来自可信发行者的 JWT。
-- **hydra_jwk**: 存储 JSON Web Keys，用于签名和验证 JWT。这些密钥是实现安全通信的基础。
-
 ### Keto 测试
 
-Keto 提供访问控制和权限管理。它实现了谷歌的权限管理模型 Zanzibar，允许开发者定义复杂的权限关系和访问控制规则，比如：RBAC、ABAC 等。
+Keto 提供访问控制和权限管理。它实现了谷歌的权限管理模型 Zanzibar，允许开发者定义复杂的权限关系和访问控制规则，比如：RBAC、ABAC 等。目前 Keto 还处于 alpha 阶段，本测试也遇到了不少问题，导致测试不顺利，期待正式版本。
+
+<p align="center">
+  <img src="./image/keto.png" alt="Keto ER" width="400"/>
+</p>
+
+在 ORY Keto 中，数据模型的核心构成是用于定义访问控制策略的关系元组（relation tuples）。以下是各个表的作用和它们之间的关系：
+
+- **keto_relation_tuples**：存储所有的关系元组。这些元组定义了主体（subject）、对象（object）以及它们之间的关系（relation），从而实现细粒度的访问控制策略。
+- **keto_uuid_mappings**：存储 UUID 和其字符串表示之间的映射，可能是为了简化查询和提高性能。
 
 #### Keto RBAC
 
@@ -411,15 +416,54 @@ groups:admin#member@Neel
 docker compose exec keto keto relation-tuple create /home/ory/policies.json  --insecure-disable-transport-security
 ```
 
-由于上面导入数据的命令执行失败，本测试等待官方修复后再进行。
+由于上面导入数据的命令执行失败，临时使用 SQL 插入：
 
-##### Keto 相关表的补充说明
+```sql
+INSERT INTO public.keto_uuid_mappings (id, string_representation) VALUES
+('da455573-fb0a-4de3-88d3-6f7417432dcc','finance'),
+('da455573-fb0a-4de3-88d3-6f7417432dcd','community'),
+('da455573-fb0a-4de3-88d3-6f7417432dce','marketing'),
+('da455573-fb0a-4de3-88d3-6f7417432dc1','admin'),
+('da455573-fb0a-4de3-88d3-6f7417432dc2','Lila'),
+('da455573-fb0a-4de3-88d3-6f7417432dc3','Dilan'),
+('da455573-fb0a-4de3-88d3-6f7417432dc4','Hadley'),
+('da455573-fb0a-4de3-88d3-6f7417432dc5','Neel');
 
-<p align="center">
-  <img src="./image/keto.png" alt="Keto ER" width="400"/>
-</p>
+INSERT INTO public.keto_relation_tuples (shard_id, nid, "namespace", "object", relation, subject_id,subject_set_namespace, subject_set_object, subject_set_relation, commit_time) VALUES
+('0fdfedd5-d728-4a92-b818-a6bccc280b91', (SELECT id FROM networks LIMIT 1), 'reports', 'da455573-fb0a-4de3-88d3-6f7417432dcc', 'view', NULL, 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dcc', 'member', NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b92', (SELECT id FROM networks LIMIT 1), 'reports', 'da455573-fb0a-4de3-88d3-6f7417432dcd', 'view', NULL, 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dcd', 'member', NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b93', (SELECT id FROM networks LIMIT 1), 'reports', 'da455573-fb0a-4de3-88d3-6f7417432dce', 'view', NULL, 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dce', 'member', NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b94', (SELECT id FROM networks LIMIT 1), 'reports', 'da455573-fb0a-4de3-88d3-6f7417432dcc', 'edit', NULL, 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dc1', 'member', NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b95', (SELECT id FROM networks LIMIT 1), 'reports', 'da455573-fb0a-4de3-88d3-6f7417432dcd', 'edit', NULL, 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dc1', 'member', NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b96', (SELECT id FROM networks LIMIT 1), 'reports', 'da455573-fb0a-4de3-88d3-6f7417432dce', 'edit', NULL, 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dc1', 'member', NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b97', (SELECT id FROM networks LIMIT 1), 'reports', 'da455573-fb0a-4de3-88d3-6f7417432dcc', 'view', NULL, 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dc1', 'member', NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b98', (SELECT id FROM networks LIMIT 1), 'reports', 'da455573-fb0a-4de3-88d3-6f7417432dcd', 'view', NULL, 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dc1', 'member', NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b99', (SELECT id FROM networks LIMIT 1), 'reports', 'da455573-fb0a-4de3-88d3-6f7417432dce', 'view', NULL, 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dc1', 'member', NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b9a', (SELECT id FROM networks LIMIT 1), 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dcc', 'member', 'da455573-fb0a-4de3-88d3-6f7417432dc2', NULL, NULL, NULL, NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b9b', (SELECT id FROM networks LIMIT 1), 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dcd', 'member', 'da455573-fb0a-4de3-88d3-6f7417432dc3', NULL, NULL, NULL, NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b9c', (SELECT id FROM networks LIMIT 1), 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dce', 'member', 'da455573-fb0a-4de3-88d3-6f7417432dc4', NULL, NULL, NULL, NOW()),
+('0fdfedd5-d728-4a92-b818-a6bccc280b9d', (SELECT id FROM networks LIMIT 1), 'groups', 'da455573-fb0a-4de3-88d3-6f7417432dc1', 'member', 'da455573-fb0a-4de3-88d3-6f7417432dc5', NULL, NULL, NULL, NOW());
+```
 
-在 ORY Keto 中，数据模型的核心构成是用于定义访问控制策略的关系元组（relation tuples）。以下是各个表的作用和它们之间的关系：
+下面测试一下 Dilan 拥有的权限：
 
-- **keto_relation_tuples**：存储所有的关系元组。这些元组定义了主体（subject）、对象（object）以及它们之间的关系（relation），从而实现细粒度的访问控制策略。
-- **keto_uuid_mappings**：存储 UUID 和其字符串表示之间的映射，可能是为了简化查询和提高性能。
+```shell
+# 检查 Dilan 是否有 reports finance 的查看权限
+docker compose exec keto keto check Dilan view reports finance --insecure-disable-transport-security
+# 检查 Dilan 是否有 reports community 的查看权限
+docker compose exec keto keto check Dilan view reports community --insecure-disable-transport-security
+# 检查 Dilan 是否有 reports community 的编辑权限
+docker compose exec keto keto check Dilan edit reports community --insecure-disable-transport-security
+# 查询 Dilan 有哪些角色
+docker compose exec keto keto relation-tuple get --subject-id=Dilan --relation=member --insecure-disable-transport-security
+# 查询 groups:marketing 角色有哪些权限
+docker compose exec keto keto relation-tuple get --subject-set="groups:marketing#member" --insecure-disable-transport-security
+# 查询 groups:community#member 角色有哪些权限
+docker compose exec keto keto relation-tuple get --subject-set="groups:community#member" --insecure-disable-transport-security
+```
+
+上面的命令会报错，等官方修复。
+
+#### Oathkeeper 开启 Keto
+
+TODO

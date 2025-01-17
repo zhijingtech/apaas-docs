@@ -6,7 +6,9 @@
 
 ### IDaaS
 
-- [ORY 全家桶](./idaas/ory/README.md)
+- [ORY Self-hosting](./idaas/ory-self-hosting/README.md)
+- [ORY Network](./idaas/ory-network/README.md)
+- [SaToken](https://sa-token.cc/doc.html)
 
 ## 选型篇
 

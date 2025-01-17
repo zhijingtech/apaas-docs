@@ -1,3 +1,3 @@
 .DS_Store
-idaas/ory/postgresql/data/pgdata
-idaas/ory/keto/config/.ash_history
+idaas/ory-self-hosting/postgresql/data/pgdata
+idaas/ory-self-hosting/keto/config/.ash_history
